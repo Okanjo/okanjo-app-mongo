@@ -1,0 +1,15 @@
+sudo: true
+language: node_js
+node_js:
+  - "lts/*"
+  - "6"
+services:
+  - docker
+before_install:
+  - docker pull mongo:3.5
+  - docker run -d -p 27017:27017 mongo:3.5
+  - sleep 5
+script:
+  - npm run report
+after_script:
+  - "npm install coveralls@2.10.0 && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls"
