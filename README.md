@@ -330,6 +330,110 @@ Note: The environment prefix will be included as well. For example, in `sandbox`
 Fired when the mongo service aggregate connection status changes.
 * `newState` – Boolean whether all connections are ready or not.
 
+# CrudService
+
+Base class for building services based on a Mongoose model. The idea of using CrudService is to:
+ * Stop duplicating logic across every single service you have to write (CRUDL)
+ * Automatically handle and report errors on common operations so you don't need to in the business logic
+ * Provide base functions that can be optionally used in the service when exposed as whatever names you like
+   * This also allows you to hook-in logic on various events (e.g. when service.delete is called, do something special)
+ * Conceal deleted resources without actually deleting them
+   * We don't like to permanently delete data. Instead, we like to leave tombstones behind so we can audit before cleaning up later. This is also very handy for syncing to data lakes. Do you know what resources were deleted in the last 15 minutes?
+   * When a doc is deleted, its `status` property is just set to `dead`. 
+   * The `_find` and `_retrieve` helpers automatically deal with dead resources from there, like they were really deleted.
+
+Note: you should extend this class to make it useful!
+
+## Properties
+* `service.app` – (read-only) The OkanjoApp instance provided when constructed
+* `service.model` – The Mongoose model this service manages
+* `service._createRetryCount` – How many times a `_createWithRetry` method can attempt to create a doc before giving up 
+* `service._modifiableKeys` – What model properties are assumed to be safe to copy from user-data
+* `service._deletedStatus` – The status to set docs to when "deleting" them
+* `service._concealDeadResources` – Whether this service should actively prevent "deleted" (status=dead) resources from returning in _retrieve and _find  
+
+## Methods
+
+### `_create(data, callback, [suppressCollisionError])`
+Creates a new resource.
+* `data` – The object to store
+* `callback(err, doc)` – Function fired when completed
+  * `err` – Error, if occurred
+  * `doc` – The new Mongoose model that was created
+* `suppressCollisionError` - Internal flag to suppress automatically reporting the error if it is a collision
+
+### `_createWithRetry(data, objectClosure, callback, [attempt])`
+Creates a new resource after calling the given object closure. This closure is fired again (up to `service._createRetryCount` times) in the event there is a collision. 
+This is useful when you store documents that have unique fields (e.g. an API key) that you can regenerate in that super rare instance that you collide
+* `data` – The object to store
+* `objectClosure(data, attempt)` – Function fired before saving the new document. Set changeable, unique properties here
+  * `data` – The object to store
+  * `attempt` – The attempt number, starting at `0`
+* `callback(err, doc)` – Function fired when completed
+  * `err` – Error, if occurred
+  * `doc` – The new Mongoose model that was created
+* `attempt` – The internal attempt number (will increase after collisions)
+
+### `_retrieve(id, callback)`
+Retrieves a single document from the collection.
+* `id` – The mixed id of the record. Can be an ObjectId or public base-58 encoded id
+* `callback(err, doc)` – Function fired when completed
+  * `err` – Error, if occurred
+  * `doc` – The Mongoose model found or `null` if not found
+  
+### `_find(criteria, [options], callback)`
+Finds records matching the given criteria. Supports pagination, field selection and more!
+* `criteria` – Object with mongo query criteria
+* `options` – (Optional) Additional query options or mongo query settings
+  * `options.skip` – Offsets the result set by this many records (pagination). Default is unset.  
+  * `options.take` – Returns this many records (pagination). Default is unset.
+  * `options.fields` – Returns only the given fields (same syntax as mongo selects) Default is unset.
+  * `options.sort` – Sorts the results by the given fields (same syntax as mongo sorts). Default is unset.
+  * `options.exec` – Whether to perform the query or not. Useful if you would like to use the returned query as a base or other fancy things like [Mongoose's ability to turn a query into a constructor](http://mongoosejs.com/docs/api.html#query_Query-toConstructor). Defaults to `true` 
+  * `options.conceal` – Whether to conceal dead resources. Default is `true`. 
+  * `options.*` – Any other option is passed to Mongoose [Query#setOptions](http://mongoosejs.com/docs/api.html#query_Query-setOptions).
+* `callback(err, docs)` – Fired when completed
+  * `err` – Error, if occurred
+  * `docs` – The array of documents returned or `[]` if none found.
+
+Returns: Mongoose Query object
+   
+### `_count(criteria, [options], callback)`
+Counts the number of matched records.
+* `criteria` – Object with mongo query criteria
+* `options` – (Optional) Additional query options or mongo query settings
+  * `options.conceal` – Whether to conceal dead resources. Default is `true`.
+  * `options.*` – Any other option is passed to Mongoose [Query#setOptions](http://mongoosejs.com/docs/api.html#query_Query-setOptions).
+* `callback(err, count)` – Fired when completed
+  * `err` – Error, if occurred
+  * `count` – The number of matched documents or `0` if none found.
+
+### `_update(doc, [data], callback)`
+Updates the given model and optionally applies user-modifiable fields, if service is configured to do so.
+* `doc` – The model to update  
+* `data` – (Optional) Additional pool of key-value fields. Only keys that match `service._modifiableKeys` will be copied if present. Useful for passing in a request payload and copying over pre-validated data as-is.  
+* `callback(err, doc)` – Fired when completed
+  * `err` – Error, if occurred
+  * `doc` – The updated model
+  
+### `_delete(doc, callback)`
+Fake-deletes a model from the collection. In reality, it just sets its status to `dead` (or whatever the value of `service._deletedStatus` is).
+* `doc` – The model to delete  
+* `callback(err, doc)` – Fired when completed
+  * `err` – Error, if occurred
+  * `doc` – The updated model
+
+### `_deletePermanently(doc, callback)`
+Permanently deletes a model from the collection. This is destructive!
+* `doc` – The model to delete  
+* `callback(err, doc)` – Fired when completed
+  * `err` – Error, if occurred
+  * `doc` – The deleted model
+  
+## Events
+
+This class does not emit events.
+
 
 ## Extending and Contributing 
 
