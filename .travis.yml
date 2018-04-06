@@ -1,15 +1,33 @@
 sudo: true
 language: node_js
 node_js:
-  - "lts/*"
-  - "6"
+- lts/*
+- '6'
 services:
-  - docker
+- docker
 before_install:
-  - docker pull mongo:3.5
-  - docker run -d -p 27017:27017 mongo:3.5
-  - sleep 5
+- docker pull mongo:3.5
+- docker run -d -p 27017:27017 mongo:3.5
+- sleep 5
 script:
-  - npm run report
+- npm run report
 after_script:
-  - "npm install coveralls@2.10.0 && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls"
+- npm install coveralls@2.10.0 && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls
+before_deploy:
+- mkdir ./deploy && cp ./README.md ./deploy
+deploy:
+  provider: s3
+  access_key_id:
+    secure: EmaL/Q3zUMy+wCUF/2FHEHEiR5z+A7IYIW+B2zGA0lyJwcByHT2lJFjHGkD+ksy9FgkEQWj44ir7A8/6YCHGlS9P6So65+912IorcZFNrLRvZz5+qD9oVqh3gSIBnT7t0u6OSmoFSefCQqO6o3kB3ONqWfrlwb3+B1oFNlRypezEQdA3trZqmMnUyBkuDqXExSXvHmNqPFzL+g+aBErqBch3+8/3fnDhg72SVBwj5Lm0gWB+klxAtT5ih09zvrAsC7uVfQYtmGeLb/27fj+bdR9u/cLF1ars+Noq6zwrICwp+jOeXrk3AnKIKvEqyxmvCG4ltevChNcBDvjSZJpQV+DUFUERW4koJY0pabYQTRvNbzoewkdA2T0ukb1EVXXjAlwS/XTCDYRhaBd2/J1G6tNIWgWJvzOn3g7BIVqjJhxeAfYc3aHbwfJt5xFZ2GpLxm33fyyT/nDT3P7/9V9P4wKUQQoTs5oHm7W10wB2Yc45+FXTHlUOtP7KBDo7Fabznp+DFwkyubbmcXIGTBmqkzb2hbO+ZVplgYLIq5fsMEcSsq41TdML+GtVq6LrZFNK+nNeo1NOoc6QKF/G9rLa6kXMFAZ6ZGGjCfanwigYepglsEUwQ2s/bEHLxuU8DxHC6Egzo9xJzt+hg2LyONuSHEAynqFPRyqdPpwfI4zzCDM=
+  secret_access_key:
+    secure: THreNUh9PnOkLiqbCIR53G6p3r5LvnpKHO4GoOgnR3/D+ESYZnkmqS1dT03e3v0f+SXoNkwec3rm1J1LzI9FTt+ebedmSu/IEYpWAUs1N/TXxwB3XJloRRRoe7Lxx/dvyWq+w1CfmfGuR4e1Quk/Q4w9rT63tnhUkNoRNgoAf2zM/eI3/GxKI0frIRPyDs10UqzoAVrHN6Nw02vU/EZkDH4bXnNUBJz4FSlmvLNtGWcgTANgQEkIwMuMw7MrOgC0IxB3C2LNlQfeVQQiUF0gqmOQBfmw2Kmr061P4ld1Tsu1iN5MYB0XoJqunMe3S76CxO717zkE4pT7Bx6CJanuhNerXr+QpcTnpMRxCVjH/d/J9S4ljw/zscdcCb3KuH3/dnlSONc2oIpYIU1MLkrH8JL2KnktrTOkW+YLfEPKcIHJKcygERmfmMSN+WSuMqgJ7K1gi5lVcoLjUc3jGtUBtY6210Zxetos628dj4uq2C8VbBZsnChX0yiMmqxKM2CXIquq+qAkfqIAFiyHivtTu1gTPeMPSKOk2KBgEWLPux523II3e5gtB+QUjRlVzlDohfQ801ZC1znrHU542ukjfFxdmMX0QVmxD3HxIQ8oOTUYaKeDI3ogHATRB2CYPzmoZN+W1P0NfrZ+nzlNJD4KwAzMGzHmLmb0EgVuLazzqXE=
+  bucket: okanjo-docs
+  skip_cleanup: true
+  upload-dir: okanjo-app-mongo
+  acl: public_read
+  detect_encoding: true
+  default_text_charset: utf-8
+  local_dir: deploy
+  on:
+    branch: master
+    repo: Okanjo/okanjo-app-mongo
