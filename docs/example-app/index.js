@@ -31,7 +31,7 @@ app.connectToServices(() => {
             process.exit(1);
         } else {
 
-            app.inspect('Created doodad', doc.toObject());
+            app.dump('Created doodad', doc.toObject());
 
             // Example: use the direct Mongoose model to find the doc
             app.dbs.widgets.Doodad.find({ _id: doc._id }, (err, docs) => {
@@ -40,7 +40,7 @@ app.connectToServices(() => {
                     process.exit(2);
                 } else {
 
-                    app.inspect('Retrieved doodads', docs.map((d) => d.toObject()));
+                    app.dump('Retrieved doodads', docs.map((d) => d.toObject()));
 
                     console.log('Done!');
                     process.exit(0);

@@ -32,7 +32,7 @@ describe('MongoService', function() {
             app.services.mongo.widgets.Doodad.should.be.a.Function();
 
             // purge any existing records
-            app.services.mongo.widgets.Doodad.remove({}, (err) => {
+            app.services.mongo.widgets.Doodad.deleteMany({}, (err) => {
                 done(err);
             });
         });
@@ -65,7 +65,13 @@ describe('MongoService', function() {
 
         new MongoService(app3);
 
-        (() => { app3.connectToServices() }).should.throw(/definition/);
+        (async () => {
+            try {
+                await app3.connectToServices()
+            } catch(err) {
+                should(err.message).match(/definition/);
+            }
+        })();
 
     });
 

@@ -1,6 +1,6 @@
 const Path = require('path');
 
-const host = process.env.MONGO_HOST || '192.168.99.100:9010';
+const host = process.env.MONGO_HOST || 'localhost:9010';
 
 module.exports = {
     mongo: {

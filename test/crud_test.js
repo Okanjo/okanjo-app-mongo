@@ -1,12 +1,12 @@
 "use strict";
 
-const should = require('should'),
-    CrudService = require('../CrudService'),
-    mongoose = require('mongoose'),
-    ObjectId = mongoose.Types.ObjectId,
-    async = require('async');
+const should = require('should');
+const CrudService = require('../CrudService');
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
+const async = require('async');
 
-describe('CrudService', function () {
+describe('CrudService', () => {
 
     const OkanjoApp = require('okanjo-app');
     const MongoService = require('../MongoService');
@@ -14,10 +14,11 @@ describe('CrudService', function () {
     const config = require('./app/config');
     const cleanup = { ids: [] };
 
-    let app, fauxService;
+    let app;
+    let fauxService;
 
     // Init
-    before(function(done) {
+    before(done => {
 
         app = new OkanjoApp(config);
 
@@ -38,26 +39,26 @@ describe('CrudService', function () {
 
         app.connectToServices(() => {
             // purge any existing records
-            app.dbs.widgets.Doodad.remove({}, (err) => {
+            app.dbs.widgets.Doodad.deleteMany({}, (err) => {
                 done(err);
             });
         });
     });
 
     // Cleanup
-    after(function(done) {
+    after(done => {
 
         // Perm delete the doodads from the DB
         async.each(cleanup.ids, (id, next) => {
-            app.dbs.widgets.Doodad.findOneAndRemove({ _id: id }, (err, doc) => {
-                if (err) console.error('Failed to cleanup doodad', err, doc, id);
+            app.dbs.widgets.Doodad.findOneAndDelete({ _id: id }, (/*err, doc*/) => {
+                // if (err) console.error('Failed to cleanup doodad', err, doc, id);
                 next();
             });
         }, done);
 
     });
 
-    it ('can be extended', function() {
+    it ('can be extended', () => {
 
         class FauxService extends CrudService {
             constructor(app) {
@@ -68,14 +69,14 @@ describe('CrudService', function () {
         fauxService = new FauxService(app);
     });
 
-    describe('_create', function() {
-        it('reports error and fails on id collision', function(done) {
+    describe('_create', () => {
+        it('reports error and fails on id collision', done => {
             // Create a document that will serve as the existing one to test collisions
             fauxService._create({
                 name: "unit test: id to collide",
                 key: "DDcollide",
                 status: 'active'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
@@ -88,7 +89,7 @@ describe('CrudService', function () {
                     name: "unit test: this doc should not get saved",
                     key: "DDcollide",
                     status: 'active'
-                }, function(err, doc) {
+                }, (err, doc) => {
                     should(err).be.ok();
                     should(doc).not.be.ok();
 
@@ -97,8 +98,7 @@ describe('CrudService', function () {
             });
         });
 
-
-        it("doesn't need a callback", function(done) {
+        it("doesn't need a callback", done => {
             // Create a document
             const id = new ObjectId();
             fauxService._create({
@@ -111,22 +111,21 @@ describe('CrudService', function () {
             // Since we set the id, we can clean it up.
             cleanup.ids.push(id);
 
-            setTimeout(function() {
+            setTimeout(() => {
                 done();
             }, 10);
         });
     });
 
-
-    describe('_createWithRetry', function() {
-        it('actually works on collision, stops on max attempts and can succeed)', function(done) {
+    describe('_createWithRetry', () => {
+        it('actually works on collision, stops on max attempts and can succeed)', done => {
 
             // Create a document that will serve as the existing one to test collisions
             fauxService._create({
                 name: "unit test: id to collide",
                 key: "DDcollide2",
                 status: 'active'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
@@ -142,7 +141,7 @@ describe('CrudService', function () {
                     name: "unit test: retry collision candidate",
                     key: "DDcollide2",
                     status: 'active'
-                }, function(data, attempts) {
+                }, (data, attempts) => {
 
                     // Should not have exceeded the number of tries
                     attempts.should.be.lessThan(fauxService._createRetryCount);
@@ -157,7 +156,7 @@ describe('CrudService', function () {
                         status: 'active'
                     };
 
-                }, function(err, doc) {
+                }, (err, doc) => {
                     should(err).be.ok();
                     should(doc).not.be.ok();
 
@@ -168,7 +167,7 @@ describe('CrudService', function () {
                         name: "unit test: retry collision candidate",
                         key: "DDcollide2",
                         status: 'active'
-                    }, function(data, attempts) {
+                    }, (data, attempts) => {
 
                         // Should not have exceeded the number of tries
                         attempts.should.be.lessThan(fauxService._createRetryCount);
@@ -182,7 +181,7 @@ describe('CrudService', function () {
                             status: 'active'
                         };
 
-                    }, function(err, doc) {
+                    }, (err, doc) => {
                         should(err).not.be.ok();
                         should(doc).be.ok();
 
@@ -196,31 +195,28 @@ describe('CrudService', function () {
         });
 
 
-        it("doesn't need a callback", function(done) {
+        it("doesn't need a callback", done => {
             // Create a document
             const id = new ObjectId();
-            fauxService._createWithRetry({}, function() {
-                return {
-                    _id: id,
-                    name: "unit test: forget the callback",
-                    key: app.services.doodad.generateKey(),
-                    status: 'active'
-                };
-            });
+            fauxService._createWithRetry({}, () => ({
+                _id: id,
+                name: "unit test: forget the callback",
+                key: app.services.doodad.generateKey(),
+                status: 'active'
+            }));
 
             // Since we set the id, we can clean it up.
             cleanup.ids.push(id);
 
-            setTimeout(function() {
+            setTimeout(() => {
                 done();
             }, 10);
         });
     });
 
-
-    describe('_retrieve', function() {
-        it('calls back with nothing when no id is given', function(done) {
-            fauxService._retrieve(undefined, function(err, doc) {
+    describe('_retrieve', () => {
+        it('calls back with nothing when no id is given', done => {
+            fauxService._retrieve(undefined, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).not.be.ok();
                 done();
@@ -228,21 +224,21 @@ describe('CrudService', function () {
         });
 
         // retrieve doesn't need a callback when no id is given
-        it('does not need a callback', function(done) {
+        it('does not need a callback', done => {
             fauxService._retrieve();
             fauxService._retrieve(12345);
 
-            setTimeout(function() {
+            setTimeout(() => {
                 done();
             }, 10);
         });
 
-        it('does not retrieve dead resources', function(done) {
+        it('does not retrieve dead resources', done => {
             fauxService._create({
                 name: "unit test: dead no retrieve",
                 key: "DDdead1",
                 status: 'dead'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
@@ -250,7 +246,7 @@ describe('CrudService', function () {
                 doc._id.should.be.an.Object();
 
                 // Should not return
-                fauxService._retrieve(doc._id, function(err, doc) {
+                fauxService._retrieve(doc._id, (err, doc) => {
                     should(err).not.be.ok();
                     should(doc).be.exactly(null);
 
@@ -259,7 +255,7 @@ describe('CrudService', function () {
             });
         });
 
-        it('can retrieve dead resources if concealment is off', function(done) {
+        it('can retrieve dead resources if concealment is off', done => {
 
             // turn off concealment
             fauxService._concealDeadResources = false;
@@ -268,7 +264,7 @@ describe('CrudService', function () {
                 name: "unit test: dead no retrieve",
                 key: "DDdead2",
                 status: 'dead'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
@@ -276,7 +272,7 @@ describe('CrudService', function () {
                 doc._id.should.be.an.Object();
 
                 // Should not return
-                fauxService._retrieve(doc._id, function(err, doc) {
+                fauxService._retrieve(doc._id, (err, doc) => {
                     should(err).not.be.ok();
                     should(doc).be.ok();
                     doc.key.should.equal('DDdead2');
@@ -290,11 +286,10 @@ describe('CrudService', function () {
         });
     });
 
-
-    describe('_find', function() {
+    describe('_find', () => {
 
         // Create a set of doodads to search on
-        before(function(done) {
+        before(done => {
 
             const doodads = [
                 {
@@ -319,9 +314,9 @@ describe('CrudService', function () {
                 }
             ];
 
-            async.each(doodads, function(doodad, cb) {
-                fauxService._create(doodad, function(err, doc) {
-                    if (err) { console.error('FAILED TO SETUP DOODADS FOR _find TEST!', err) }
+            async.each(doodads, (doodad, cb) => {
+                fauxService._create(doodad, (err, doc) => {
+                    // if (err) { console.error('FAILED TO SETUP DOODADS FOR _find TEST!', err) }
                     if (doc) {
                         cleanup.ids.push(doc._id);
                     }
@@ -332,8 +327,8 @@ describe('CrudService', function () {
         });
 
 
-        it('does not need options', function(done) {
-            const q = fauxService._find({name: /^unit test: find/}, function (err, docs) {
+        it('does not need options', done => {
+            const q = fauxService._find({name: /^unit test: find/}, (err, docs) => {
                 should(err).not.be.ok();
                 should(docs).be.an.Array();
 
@@ -347,8 +342,8 @@ describe('CrudService', function () {
         });
 
 
-        it('does not return dead resources (merge status)', function(done) {
-            const q = fauxService._find({name: /^unit test: find/, status: "pending"}, function (err, docs) {
+        it('does not return dead resources (merge status)', done => {
+            const q = fauxService._find({name: /^unit test: find/, status: "pending"}, (err, docs) => {
                 should(err).not.be.ok();
                 should(docs).be.an.Array();
 
@@ -361,8 +356,8 @@ describe('CrudService', function () {
             q.should.be.an.Object();
         });
 
-        it('does not return dead resources (merge $and status)', function(done) {
-            const q = fauxService._find({$and: [{name: /^unit test: find/}], status: "pending"}, function (err, docs) {
+        it('does not return dead resources (merge $and status)', done => {
+            const q = fauxService._find({$and: [{name: /^unit test: find/}], status: "pending"}, (err, docs) => {
                 should(err).not.be.ok();
                 should(docs).be.an.Array();
 
@@ -375,8 +370,8 @@ describe('CrudService', function () {
             q.should.be.an.Object();
         });
 
-        it('does return dead resources when overridden', function(done) {
-            const q = fauxService._find({name: /^unit test: find/}, {conceal: false}, function (err, docs) {
+        it('does return dead resources when overridden', done => {
+            const q = fauxService._find({name: /^unit test: find/}, {conceal: false}, (err, docs) => {
                 should(err).not.be.ok();
                 should(docs).be.an.Array();
 
@@ -390,13 +385,13 @@ describe('CrudService', function () {
         });
 
 
-        it('does not need a callback', function(done) {
+        it('does not need a callback', done => {
             fauxService._find();
             setTimeout(done, 10);
         });
 
 
-        it('handles pagination, sort, fields, and other options', function(done) {
+        it('handles pagination, sort, fields, and other options', done => {
             fauxService._find({
                 name: /^unit test: find/
             }, {
@@ -404,7 +399,7 @@ describe('CrudService', function () {
                 take: 1,
                 sort: { created: -1, _id: -1 },
                 fields: "name created"
-            }, function(err, docs) {
+            }, (err, docs) => {
                 should(err).not.be.ok();
                 should(docs).be.an.Array();
 
@@ -431,7 +426,7 @@ describe('CrudService', function () {
                     sort: { created: -1, _id: -1 },
                     fields: "name created",
                     comment: 'unit test cursor'
-                }, function(err, docs) {
+                }, (err, docs) => {
                     should(err).not.be.ok();
                     should(docs).be.an.Array();
 
@@ -445,14 +440,12 @@ describe('CrudService', function () {
         });
 
 
-        it('will not exec if told not to', function(done) {
-            const q = fauxService._find({name: /^unit test: find/}, {exec: false}, function () {
-                throw new Error('This should not have fired!');
-            });
+        it('will not exec if told not to', done => {
+            const q = fauxService._buildQuery({name: /^unit test: find/}, {exec: false});
 
             // Should return a query object
             q.should.be.an.Object();
-            q.exec(function(err, docs) {
+            q.exec((err, docs) => {
                 should(err).not.be.ok();
                 should(docs).be.an.Array();
 
@@ -463,30 +456,26 @@ describe('CrudService', function () {
         });
 
 
-        it('will report errors', function(done) {
-            fauxService._find({_things: { $in: "nope" }}, function(err, docs) {
+        it('will report errors', done => {
+            fauxService._find({_things: { $in: "nope" }}, (err, docs) => {
                 should(err).be.ok();
-                console.log(err);
+                // console.log(err);
                 err.code.should.be.greaterThan(0); // this was 17287 in mongo 3.2, in 3.5 it's now just 2 ¯\_(ツ)_/¯
 
-                should(docs).be.ok();
-                should(docs).be.an.Array();
-
-                docs.length.should.be.equal(0);
+                should(docs).be.not.ok();
 
                 done();
             });
         });
     });
 
-
-    describe('_update', function() {
-        it('applies data props` correctly', function(done) {
+    describe('_update', () => {
+        it('applies data props` correctly', done => {
             fauxService._create({
                 name: "unit test: update me ",
                 key: app.services.doodad.generateKey(),
                 status: 'active'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
@@ -499,24 +488,23 @@ describe('CrudService', function () {
                 // Now change it
                 fauxService._update(doc, {
                     name: "unit test: updated!"
-                }, function(err, doc, dirty) {
+                }, (err, doc) => {
                     should(err).not.be.ok();
                     should(doc).be.ok();
 
                     doc.name.should.be.equal("unit test: updated!");
-                    should(dirty).be.exactly(true);
 
                     done();
                 });
             });
         });
 
-        it('is not dirty if nothing changed', function(done) {
+        it('is not dirty if nothing changed', done => {
             fauxService._create({
                 name: "unit test: update me",
                 key: app.services.doodad.generateKey(),
                 status: 'active'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
@@ -526,12 +514,11 @@ describe('CrudService', function () {
                 // Now change it
                 fauxService._update(doc, {
                     nope: "unit test: updated!"
-                }, function(err, doc, dirty) {
+                }, (err, doc) => {
                     should(err).not.be.ok();
                     should(doc).be.ok();
 
                     should(doc.nope).not.be.ok();
-                    should(dirty).be.exactly(false);
 
                     done();
                 });
@@ -539,12 +526,12 @@ describe('CrudService', function () {
         });
 
 
-        it('does not need a callback', function(done) {
+        it('does not need a callback', done => {
             fauxService._create({
                 name: "unit test: update me no cb",
                 key: app.services.doodad.generateKey(),
                 status: 'active'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
@@ -561,14 +548,14 @@ describe('CrudService', function () {
         });
 
 
-        it('reports on error', function(done) {
+        it('reports on error', done => {
 
             // Create a doodad
             fauxService._create({
                 name: "unit test: update for delete 1",
                 key: app.services.doodad.generateKey(),
                 status: 'active'
-            }, function(err, doc1) {
+            }, (err, doc1) => {
                 should(err).not.be.ok();
                 should(doc1).be.ok();
 
@@ -580,7 +567,7 @@ describe('CrudService', function () {
                     name: "unit test: update for delete 2",
                     key: app.services.doodad.generateKey(),
                     status: 'active'
-                }, function (err, doc2) {
+                }, (err, doc2) => {
                     should(err).not.be.ok();
                     should(doc2).be.ok();
 
@@ -590,10 +577,9 @@ describe('CrudService', function () {
                     // Update the second doodad to have the same DD as the first - should result in an error
                     doc2.key = doc1.key;
 
-                    fauxService._update(doc2, function (err, doc, dirty) {
+                    fauxService._update(doc2, (err, doc) => {
                         should(err).be.ok();
                         should(doc).not.be.ok();
-                        should(dirty).be.exactly(true);
 
                         done();
                     });
@@ -602,14 +588,13 @@ describe('CrudService', function () {
         });
     });
 
-
-    describe('_delete', function() {
-        it('changes status to dead', function(done) {
+    describe('_delete', () => {
+        it('changes status to dead', done => {
             fauxService._create({
                 name: "unit test: delete me",
                 key: app.services.doodad.generateKey(),
                 status: 'active'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
@@ -619,7 +604,7 @@ describe('CrudService', function () {
                 doc.status.should.be.equal('active');
 
                 // Now "delete" it
-                fauxService._delete(doc, function(err, doc) {
+                fauxService._delete(doc, (err, doc) => {
                     should(err).not.be.ok();
                     should(doc).be.ok();
 
@@ -631,23 +616,22 @@ describe('CrudService', function () {
         });
     });
 
-
     describe('_deletePermanently', () => {
         it('works as intended', (done) => {
             fauxService._create({
                 name: "unit test: delete me really dead",
                 key: app.services.doodad.generateKey(),
                 status: 'active'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
                 // Now kill it
-                fauxService._deletePermanently(doc, function(err, doc) {
+                fauxService._deletePermanently(doc, (err, doc) => {
                     should(err).not.be.ok();
                     should(doc).be.ok();
 
-                    fauxService._retrieve(doc._id, function(err, doc) {
+                    fauxService._retrieve(doc._id, (err, doc) => {
                         should(err).not.be.ok();
                         should(doc).be.exactly(null);
 
@@ -662,7 +646,7 @@ describe('CrudService', function () {
                 name: "unit test: delete me really really dead",
                 key: app.services.doodad.generateKey(),
                 status: 'active'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
@@ -671,7 +655,7 @@ describe('CrudService', function () {
 
                 // Wait a hundredth of a sec
                 setTimeout(() => {
-                    fauxService._retrieve(doc._id, function(err, doc) {
+                    fauxService._retrieve(doc._id, (err, doc) => {
                         should(err).not.be.ok();
                         should(doc).be.exactly(null);
 
@@ -682,34 +666,33 @@ describe('CrudService', function () {
         });
     });
 
-
     describe('_count', () => {
         it('works as intended', (done) => {
             fauxService._create({
                 name: "unit test: delete me really dead",
                 key: app.services.doodad.generateKey(),
                 status: 'active'
-            }, function(err, doc) {
+            }, (err, doc) => {
                 should(err).not.be.ok();
                 should(doc).be.ok();
 
                 cleanup.ids.push(doc._id);
 
                 // Now count it
-                fauxService._count({ name: /unit test/ }, function(err, count) {
+                fauxService._count({ name: /unit test/ }, (err, count) => {
                     should(err).not.be.ok();
                     should(count).be.a.Number().and.greaterThan(0);
 
                     const firstCount = count;
 
                     // Now count it with options
-                    fauxService._count({ name: /unit test/ }, {}, function(err, count) {
+                    fauxService._count({ name: /unit test/ }, {}, (err, count) => {
                         should(err).not.be.ok();
 
                         firstCount.should.be.exactly(count);
 
                         // Now count it with shitty options
-                        fauxService._count({ name: /unit test/ }, null, function(err, count) {
+                        fauxService._count({ name: /unit test/ }, null, (err, count) => {
                             should(err).not.be.ok();
 
                             firstCount.should.be.exactly(count);

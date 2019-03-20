@@ -20,7 +20,16 @@ Add to your project like so:
 npm install okanjo-app-mongo
 ```
 
-Note: requires the [`okanjo-app`](https://github.com/okanjo/okanjo-app) module.
+> Note: requires the [`okanjo-app`](https://github.com/okanjo/okanjo-app) module.
+
+## Breaking Changes
+
+### v2.0.0
+ * CrudService: all callback functions return promises. Callbacks are optional.
+ * `CrudService._find` no longer returns a query. use CrudService._buildQuery instead.
+ * `CrudService._createWithRetry` signature has changed (is no longer recursive)
+ * `CrudService._update` no longer returns the isModified flag
+ * `CrudService._delete` no longer returns the isModified flag
 
 ## Example Usage
 
@@ -222,7 +231,8 @@ Example application that will connect, create a doc, and find the doc.
 "use strict";
 
 const OkanjoApp = require('okanjo-app');
-const MongoService = require('okanjo-app-mongo');
+// const MongoService = require('okanjo-app-mongo');
+const MongoService = require('../../MongoService');
 
 const DoodadService = require('./services/DoodadService');
 const config = require('./config');
@@ -251,7 +261,7 @@ app.connectToServices(() => {
             process.exit(1);
         } else {
 
-            app.inspect('Created doodad', doc.toObject());
+            app.dump('Created doodad', doc.toObject());
 
             // Example: use the direct Mongoose model to find the doc
             app.dbs.widgets.Doodad.find({ _id: doc._id }, (err, docs) => {
@@ -260,7 +270,7 @@ app.connectToServices(() => {
                     process.exit(2);
                 } else {
 
-                    app.inspect('Retrieved doodads', docs.map((d) => d.toObject()));
+                    app.dump('Retrieved doodads', docs.map((d) => d.toObject()));
 
                     console.log('Done!');
                     process.exit(0);
@@ -354,34 +364,36 @@ Note: you should extend this class to make it useful!
 
 ## Methods
 
-### `_create(data, callback, [suppressCollisionError])`
+### `_create(data, [callback], [suppressCollisionError])`
 Creates a new resource.
 * `data` – The object to store
-* `callback(err, doc)` – Function fired when completed
+* `callback(err, doc)` – Optional, function fired when completed
   * `err` – Error, if occurred
   * `doc` – The new Mongoose model that was created
 * `suppressCollisionError` - Internal flag to suppress automatically reporting the error if it is a collision
+* Returns a `Promise`
 
-### `_createWithRetry(data, objectClosure, callback, [attempt])`
+### `_createWithRetry(data, objectClosure, [callback])`
 Creates a new resource after calling the given object closure. This closure is fired again (up to `service._createRetryCount` times) in the event there is a collision. 
 This is useful when you store documents that have unique fields (e.g. an API key) that you can regenerate in that super rare instance that you collide
 * `data` – The object to store
 * `objectClosure(data, attempt)` – Function fired before saving the new document. Set changeable, unique properties here
   * `data` – The object to store
   * `attempt` – The attempt number, starting at `0`
-* `callback(err, doc)` – Function fired when completed
+* `callback(err, doc)` – Optional, function fired when completed
   * `err` – Error, if occurred
   * `doc` – The new Mongoose model that was created
-* `attempt` – The internal attempt number (will increase after collisions)
+* Returns a `Promise`
 
-### `_retrieve(id, callback)`
+### `_retrieve(id, [callback])`
 Retrieves a single document from the collection.
 * `id` – The mixed id of the record. Can be an ObjectId or public base-58 encoded id
-* `callback(err, doc)` – Function fired when completed
+* `callback(err, doc)` – Optional, function fired when completed
   * `err` – Error, if occurred
   * `doc` – The Mongoose model found or `null` if not found
+* Returns a `Promise`
   
-### `_find(criteria, [options], callback)`
+### `_find(criteria, [options], [callback])`
 Finds records matching the given criteria. Supports pagination, field selection and more!
 * `criteria` – Object with mongo query criteria
 * `options` – (Optional) Additional query options or mongo query settings
@@ -389,46 +401,48 @@ Finds records matching the given criteria. Supports pagination, field selection 
   * `options.take` – Returns this many records (pagination). Default is unset.
   * `options.fields` – Returns only the given fields (same syntax as mongo selects) Default is unset.
   * `options.sort` – Sorts the results by the given fields (same syntax as mongo sorts). Default is unset.
-  * `options.exec` – Whether to perform the query or not. Useful if you would like to use the returned query as a base or other fancy things like [Mongoose's ability to turn a query into a constructor](http://mongoosejs.com/docs/api.html#query_Query-toConstructor). Defaults to `true` 
   * `options.conceal` – Whether to conceal dead resources. Default is `true`. 
   * `options.*` – Any other option is passed to Mongoose [Query#setOptions](http://mongoosejs.com/docs/api.html#query_Query-setOptions).
-* `callback(err, docs)` – Fired when completed
+* `callback(err, docs)` – Optional, fired when completed
   * `err` – Error, if occurred
   * `docs` – The array of documents returned or `[]` if none found.
-
-Returns: Mongoose Query object
+* Returns a `Promise`
    
-### `_count(criteria, [options], callback)`
+### `_count(criteria, [options], [callback])`
 Counts the number of matched records.
 * `criteria` – Object with mongo query criteria
 * `options` – (Optional) Additional query options or mongo query settings
   * `options.conceal` – Whether to conceal dead resources. Default is `true`.
   * `options.*` – Any other option is passed to Mongoose [Query#setOptions](http://mongoosejs.com/docs/api.html#query_Query-setOptions).
-* `callback(err, count)` – Fired when completed
+* `callback(err, count)` – Optional, fired when completed
   * `err` – Error, if occurred
   * `count` – The number of matched documents or `0` if none found.
+* Returns a `Promise`
 
-### `_update(doc, [data], callback)`
+### `_update(doc, [data], [callback])`
 Updates the given model and optionally applies user-modifiable fields, if service is configured to do so.
 * `doc` – The model to update  
 * `data` – (Optional) Additional pool of key-value fields. Only keys that match `service._modifiableKeys` will be copied if present. Useful for passing in a request payload and copying over pre-validated data as-is.  
-* `callback(err, doc)` – Fired when completed
+* `callback(err, doc)` – Optional, fired when completed
   * `err` – Error, if occurred
   * `doc` – The updated model
-  
-### `_delete(doc, callback)`
+* Returns a `Promise`
+
+### `_delete(doc, [callback])`
 Fake-deletes a model from the collection. In reality, it just sets its status to `dead` (or whatever the value of `service._deletedStatus` is).
 * `doc` – The model to delete  
-* `callback(err, doc)` – Fired when completed
+* `callback(err, doc)` – Optional, fired when completed
   * `err` – Error, if occurred
   * `doc` – The updated model
+* Returns a `Promise`
 
-### `_deletePermanently(doc, callback)`
+### `_deletePermanently(doc, [callback])`
 Permanently deletes a model from the collection. This is destructive!
 * `doc` – The model to delete  
-* `callback(err, doc)` – Fired when completed
+* `callback(err, doc)` – Optional, fFired when completed
   * `err` – Error, if occurred
   * `doc` – The deleted model
+* Returns a `Promise`
   
 ## Events
 
@@ -454,7 +468,7 @@ docker run -d -p 27017:27017 mongo:3.5
 
 To run unit tests and code coverage:
 ```sh
-MONGO_HOST=192.168.99.100:27017 npm run report
+MONGO_HOST=localhost:27017 npm run report
 ```
 
 Update the `MONGO_HOST` environment var to match your docker host (e.g. 127.0.0.1, user, pass, etc)

@@ -9,6 +9,9 @@ const ObjectId = Mongoose.Types.ObjectId;
 // http://mongoosejs.com/docs/promises.html
 Mongoose.Promise = global.Promise;
 
+Mongoose.set('useCreateIndex', true);
+
+
 /**
  * Multi-database manager for Mongoose/MongoDB
  * Keeps track of multiple database connection states and reports health on all.
@@ -320,6 +323,7 @@ class MongoService extends EventEmitter {
 
         // Create the connection
         connection = this._dbConnections[schemaName] = Mongoose.createConnection(uri, {
+            useNewUrlParser: true,
             keepAlive: true
         }); // this will automatically open the connection
 
