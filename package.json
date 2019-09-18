@@ -1,6 +1,6 @@
 {
   "name": "okanjo-app-mongo",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Service for interfacing with MongoDB",
   "main": "MongoService.js",
   "scripts": {
@@ -24,19 +24,19 @@
   "author": "Okanjo Partners Inc",
   "license": "MIT",
   "devDependencies": {
-    "async": "^2.6.2",
-    "eslint": "^5.15.3",
-    "mocha": "^6.0.2",
-    "nyc": "^13.3.0",
-    "okanjo-app": "^2.0.0",
+    "async": "^3.1.0",
+    "eslint": "^6.4.0",
+    "mocha": "^6.2.0",
+    "nyc": "^14.1.1",
+    "okanjo-app": "^2.1.0",
     "should": "^13.2.3"
   },
   "peerDependencies": {
     "okanjo-app": ">=2"
   },
   "dependencies": {
-    "base-id": "^2.0.0",
-    "mongoose": "^5.4.19"
+    "base-id": "^2.1.0",
+    "mongoose": "^5.7.1"
   },
   "nyc": {
     "reporter": [

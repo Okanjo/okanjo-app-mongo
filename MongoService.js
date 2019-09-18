@@ -323,6 +323,7 @@ class MongoService extends EventEmitter {
 
         // Create the connection
         connection = this._dbConnections[schemaName] = Mongoose.createConnection(uri, {
+            useUnifiedTopology: true,
             useNewUrlParser: true,
             keepAlive: true
         }); // this will automatically open the connection
