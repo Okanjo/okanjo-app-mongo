@@ -208,6 +208,7 @@ describe('CrudService', () => {
             doc.key.should.equal('DDdead2');
 
             // turn concealment back on
+            // eslint-disable-next-line require-atomic-updates
             fauxService._concealDeadResources = true;
         });
     });
@@ -360,6 +361,7 @@ describe('CrudService', () => {
             doc._id.should.be.an.Object();
 
             // Allow name to get copied
+            // eslint-disable-next-line require-atomic-updates
             fauxService._modifiableKeys = ['name'];
 
             // Now change it

@@ -96,6 +96,7 @@ class CrudService {
      * @protected
      */
     _createWithRetry(data, objectClosure, callback) {
+        // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
 
             let attempt;
@@ -303,6 +304,7 @@ class CrudService {
             options = options || {};
         }
 
+        // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
 
             // Don't execute, we want the query so we can fudge it
@@ -335,7 +337,7 @@ class CrudService {
         if (data && typeof data === "object") {
             this._modifiableKeys.forEach(function (property) {
                 /* istanbul ignore else: too edge casey to test this way */
-                if (data.hasOwnProperty(property)) {
+                if (Object.prototype.hasOwnProperty.call(data, property)) {
                     doc[property] = data[property];
                 }
             });
