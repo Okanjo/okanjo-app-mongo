@@ -9,18 +9,22 @@ class CrudService {
      * @param app
      * @param model
      */
-    constructor(app, model) {
+    constructor(app, model, dbService) {
         // Make sure we're not going to have problems
         //assert(typeof model === "function", 'Model given is not an model function!');
         //assert(model.base === Mongoose, 'Model given is not a mongoose model!');
 
         // Hold a reference to the app
-        // this.app = app;
-
         Object.defineProperty(this, 'app', {
             enumerable: false,
             value: app
         });
+
+        Object.defineProperty(this, 'dbs', {
+            enumerable: false,
+            value: dbService || this.app.dbs // backwards compatibility
+        });
+
 
         /**
          * @type {Mongoose#Model}
@@ -146,7 +150,7 @@ class CrudService {
     _retrieve(id, callback) {
         return new Promise((resolve, reject) => {
             // Only do a query if there's something to query for
-            const objectId = this.app.dbs.getObjectId(id);
+            const objectId = this.dbs.getObjectId(id);
             const criteria = {_id: objectId};
 
             if (objectId) {

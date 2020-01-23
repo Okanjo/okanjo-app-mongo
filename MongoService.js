@@ -255,7 +255,11 @@ class MongoService extends EventEmitter {
         const connection = this._dbConnections[schemaName];
 
         // Since the connection should have already been setup, let's cheat and try to open it again
-        connection._open();
+        if (!connection) {
+            this._connectSchema(schemaName);
+        } else {
+            connection.connect()
+        }
     }
 
     /* istanbul ignore next: would require edge casing docker connection states */

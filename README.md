@@ -364,6 +364,12 @@ Note: you should extend this class to make it useful!
 
 ## Methods
 
+### `new CrudService(app, model, dbService)`
+Creates a new instance of a crud service
+- `app` – The OkanjoApp instance
+- `model` – The mMongoose model this service should manage (or leave `null` to set later)
+- `dbService` – The MongoService instance which handles the connection. Defaults to `app.dbs` 
+
 ### `_create(data, [callback], [suppressCollisionError])`
 Creates a new resource.
 * `data` – The object to store
