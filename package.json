@@ -1,6 +1,6 @@
 {
   "name": "okanjo-app-mongo",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Service for interfacing with MongoDB",
   "main": "MongoService.js",
   "scripts": {
@@ -35,7 +35,7 @@
     "okanjo-app": ">=2"
   },
   "dependencies": {
-    "base-id": "^2.1.0",
+    "base-id": "^2.2.0",
     "mongoose": "^5.8.9"
   },
   "nyc": {
