@@ -1,6 +1,6 @@
 # Okanjo MongoDB Service
 
-[![Build Status](https://travis-ci.org/Okanjo/okanjo-app-mongo.svg?branch=master)](https://travis-ci.org/Okanjo/okanjo-app-mongo) [![Coverage Status](https://coveralls.io/repos/github/Okanjo/okanjo-app-mongo/badge.svg?branch=master)](https://coveralls.io/github/Okanjo/okanjo-app-mongo?branch=master)
+[![Node.js CI](https://github.com/Okanjo/okanjo-app-mongo/actions/workflows/node.js.yml/badge.svg)](https://github.com/Okanjo/okanjo-app-mongo/actions/workflows/node.js.yml) [![Coverage Status](https://coveralls.io/repos/github/Okanjo/okanjo-app-mongo/badge.svg?branch=master)](https://coveralls.io/github/Okanjo/okanjo-app-mongo?branch=master)
 
 Service for interfacing with MongoDB for the Okanjo App ecosystem.
 
