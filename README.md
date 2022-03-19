@@ -468,8 +468,8 @@ Before you can run the tests, you'll need a working mongodb server. We suggest u
 For example:
 
 ```bash
-docker pull mongo:3.5
-docker run -d -p 27017:27017 mongo:3.5
+docker pull mongo:4.0
+docker run -d -p 27017:27017 mongo:4.0
 ```
 
 To run unit tests and code coverage:

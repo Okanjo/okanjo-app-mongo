@@ -8,6 +8,7 @@ class CrudService {
      * Constructor
      * @param app
      * @param model
+     * @param [dbService]
      */
     constructor(app, model, dbService) {
         // Make sure we're not going to have problems
@@ -187,14 +188,9 @@ class CrudService {
      * @private
      */
     _buildQuery(criteria, options) {
+
         // Strip options out so we can stick them into the query builder
-        options = options || {};
-        let skip, limit, fields, sort, query, conceal = true;
-        if (options.skip !== undefined) { skip = options.skip; delete options.skip; }
-        if (options.take !== undefined) { limit = options.take; delete options.take; }
-        if (options.fields !== undefined) { fields = options.fields; delete options.fields; }
-        if (options.sort !== undefined) { sort = options.sort; delete options.sort; }
-        if (options.conceal !== undefined) { conceal = options.conceal; delete options.conceal; }
+        const { skip, take, fields, sort, conceal = true, ...opts } = (options || {});
 
         // Actively prevent dead resources from returning, even if a status was given
         if (this._concealDeadResources && conceal) {
@@ -241,14 +237,14 @@ class CrudService {
         }
 
         // Build the query
-        query = this.model.find(criteria);
+        const query = this.model.find(criteria);
 
         // Add query options to the builder if present
-        if (skip !== undefined) { query = query.skip(skip); }
-        if (limit !== undefined) { query = query.limit(limit); }
-        if (fields !== undefined) { query = query.select(fields); }
-        if (sort !== undefined) { query = query.sort(sort); }
-        if (Object.keys(options).length > 0) { query = query.setOptions(options); }
+        if (skip !== undefined) { query.skip(skip); }
+        if (take !== undefined) { query.limit(take); }
+        if (fields !== undefined) { query.select(fields); }
+        if (sort !== undefined) { query.sort(sort); }
+        if (Object.keys(opts).length > 0) { query.setOptions(opts); }
 
         return query;
     }
@@ -310,9 +306,6 @@ class CrudService {
 
         // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
-
-            // Don't execute, we want the query so we can fudge it
-            options.exec = false;
 
             // Exec the count query
             const query = this._buildQuery(criteria, options);

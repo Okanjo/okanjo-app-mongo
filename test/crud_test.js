@@ -70,6 +70,7 @@ describe('CrudService', () => {
     });
 
     describe('_create', () => {
+
         it('reports error and fails on id collision', done => {
             // Create a document that will serve as the existing one to test collisions
             fauxService._create({
@@ -115,9 +116,11 @@ describe('CrudService', () => {
                 done();
             }, 10);
         });
+
     });
 
     describe('_createWithRetry', () => {
+
         it('actually works on collision, stops on max attempts and can succeed)', done => {
 
             // Create a document that will serve as the existing one to test collisions
@@ -194,7 +197,6 @@ describe('CrudService', () => {
             });
         });
 
-
         it("doesn't need a callback", done => {
             // Create a document
             const id = new ObjectId();
@@ -212,9 +214,11 @@ describe('CrudService', () => {
                 done();
             }, 10);
         });
+
     });
 
     describe('_retrieve', () => {
+
         it('calls back with nothing when no id is given', done => {
             fauxService._retrieve(undefined, (err, doc) => {
                 should(err).not.be.ok();
@@ -284,6 +288,7 @@ describe('CrudService', () => {
                 });
             });
         });
+
     });
 
     describe('_find', () => {
@@ -326,7 +331,6 @@ describe('CrudService', () => {
 
         });
 
-
         it('does not need options', done => {
             const q = fauxService._find({name: /^unit test: find/}, (err, docs) => {
                 should(err).not.be.ok();
@@ -340,7 +344,6 @@ describe('CrudService', () => {
             // Should return a query object
             q.should.be.an.Object();
         });
-
 
         it('does not return dead resources (merge status)', done => {
             const q = fauxService._find({name: /^unit test: find/, status: "pending"}, (err, docs) => {
@@ -384,12 +387,10 @@ describe('CrudService', () => {
             q.should.be.an.Object();
         });
 
-
         it('does not need a callback', done => {
             fauxService._find();
             setTimeout(done, 10);
         });
-
 
         it('handles pagination, sort, fields, and other options', done => {
             fauxService._find({
@@ -439,12 +440,12 @@ describe('CrudService', () => {
             });
         });
 
-
         it('will not exec if told not to', done => {
-            const q = fauxService._buildQuery({name: /^unit test: find/}, {exec: false});
+            const q = fauxService._buildQuery({name: /^unit test: find/});
 
             // Should return a query object
             q.should.be.an.Object();
+            q.constructor.name.should.be.exactly('Query');
             q.exec((err, docs) => {
                 should(err).not.be.ok();
                 should(docs).be.an.Array();
@@ -455,21 +456,33 @@ describe('CrudService', () => {
             });
         });
 
-
         it('will report errors', done => {
-            fauxService._find({_things: { $in: "nope" }}, (err, docs) => {
+            fauxService._find({name: { $in: {} }}, (err, docs) => {
                 should(err).be.ok();
                 // console.log(err);
-                err.code.should.be.greaterThan(0); // this was 17287 in mongo 3.2, in 3.5 it's now just 2 ¯\_(ツ)_/¯
+                // err.code.should.be.greaterThan(0); // this was 17287 in mongo 3.2, in 3.5 it's now just 2 ¯\_(ツ)_/¯
 
                 should(docs).be.not.ok();
 
                 done();
             });
         });
+
+        it('will report errors with promise', done => {
+            fauxService._find({name: { $in: {} }}).then(
+                docs => {
+                    done('should not have resolved!', docs);
+                }, err => {
+                    should(err).be.ok();
+                    done();
+                }
+            );
+        });
+
     });
 
     describe('_update', () => {
+
         it('applies data props` correctly', done => {
             fauxService._create({
                 name: "unit test: update me ",
@@ -525,7 +538,6 @@ describe('CrudService', () => {
             });
         });
 
-
         it('does not need a callback', done => {
             fauxService._create({
                 name: "unit test: update me no cb",
@@ -546,7 +558,6 @@ describe('CrudService', () => {
                 setTimeout(done, 10);
             });
         });
-
 
         it('reports on error', done => {
 
@@ -586,9 +597,11 @@ describe('CrudService', () => {
                 });
             });
         });
+
     });
 
     describe('_delete', () => {
+
         it('changes status to dead', done => {
             fauxService._create({
                 name: "unit test: delete me",
@@ -614,9 +627,11 @@ describe('CrudService', () => {
                 });
             });
         });
+
     });
 
     describe('_deletePermanently', () => {
+
         it('works as intended', (done) => {
             fauxService._create({
                 name: "unit test: delete me really dead",
@@ -664,9 +679,11 @@ describe('CrudService', () => {
                 }, 10);
             });
         });
+
     });
 
     describe('_count', () => {
+
         it('works as intended', (done) => {
             fauxService._create({
                 name: "unit test: delete me really dead",
@@ -705,6 +722,7 @@ describe('CrudService', () => {
                 });
             });
         });
+
     });
 
 });

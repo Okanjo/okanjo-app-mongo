@@ -3,7 +3,7 @@
 const should = require('should');
 const CrudService = require('../CrudService');
 
-describe('CrudService', () => {
+describe('AsyncCrudService', () => {
 
     const OkanjoApp = require('okanjo-app');
     const MongoService = require('../MongoService');
@@ -327,7 +327,7 @@ describe('CrudService', () => {
         });
 
         it('will not exec if told not to', async () => {
-            const q = fauxService._buildQuery({name: /^unit test: find/}, {exec: false});
+            const q = fauxService._buildQuery({name: /^unit test: find/}, {});
 
             // Should return a query object
             q.should.be.an.Object();

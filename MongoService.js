@@ -5,13 +5,6 @@ const Mongoose = require('mongoose');
 const BaseId = require('base-id');
 const ObjectId = Mongoose.Types.ObjectId;
 
-// Hey mongoose, shut the hell up, ok?
-// http://mongoosejs.com/docs/promises.html
-Mongoose.Promise = global.Promise;
-
-Mongoose.set('useCreateIndex', true);
-
-
 /**
  * Multi-database manager for Mongoose/MongoDB
  * Keeps track of multiple database connection states and reports health on all.
@@ -38,25 +31,27 @@ class MongoService extends EventEmitter {
         this._dbConnections = {};
 
         // Register the connection with the app
-        app._serviceConnectors.push((cb) => {
+        app._serviceConnectors.push(new Promise((resolve) => {
 
             // Do the connection
+            let resolved = false;
             this.connect();
             this.once('health_change', (state) => {
                 /* istanbul ignore else: too hard to edge case this with unit tests and docker */
                 // If the callback has not been fired, then we're ready now!
-                if (state && cb) {
-                    cb();
+                if (state && !resolved) {
+                    resolved = true;
+                    resolve();
                 }
             });
 
             /* istanbul ignore if: too hard to edge case this with unit tests and docker */
             // If the connection is already established, the health_change might not flip, so callback now if we're already good
             if (this.getHealthStatus()) {
-                cb();
-                cb = null;
+                resolved = true;
+                resolve();
             }
-        });
+        }));
     }
 
     /**
@@ -327,8 +322,6 @@ class MongoService extends EventEmitter {
 
         // Create the connection
         connection = this._dbConnections[schemaName] = Mongoose.createConnection(uri, {
-            useUnifiedTopology: true,
-            useNewUrlParser: true,
             keepAlive: true
         }); // this will automatically open the connection
 
