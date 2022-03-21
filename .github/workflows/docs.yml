@@ -19,4 +19,4 @@ jobs:
           aws-region: us-east-1
 
       - name: Copy Docs
-        run: aws s3 cp ./README.md s3://okanjo-docs/okanjo-app-elastic/ --acl public-read --content-type "text/plain; charset=utf-8" --content-encoding text
+        run: aws s3 cp ./README.md s3://okanjo-docs/okanjo-app-mongo/ --acl public-read --content-type "text/plain; charset=utf-8" --content-encoding text
